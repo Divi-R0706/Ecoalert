@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EcoAlert – Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-light text-dark">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-success text-white">
+        <div class="container">
+            <a class="navbar-brand text-white fw-bold" href="#">🌱 EcoAlert</a>
+            <div>
+                <a href="/logout" class="btn btn-outline-light">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <h2 class="text-center mb-4">Welcome, {{ session['user'] }}</h2>
+
+        <form method="POST" class="d-flex justify-content-center mb-4">
+            <input type="text" name="city" class="form-control w-50 me-2" placeholder="Enter city" required>
+            <button type="submit" class="btn btn-success">Get Weather Info</button>
+        </form>
+
+        {% if data %}
+        <div class="card p-4 shadow text-center">
+            {% if data.error %}
+                <div class="alert alert-danger">{{ data.error }}</div>
+            {% else %}
+                <h3>📍 {{ data.city }}</h3>
+                <p><strong>Temperature:</strong> {{ data.temperature }}°C</p>
+                <p><strong>Weather:</strong> {{ data.description }}</p>
+                <p><strong>AQI:</strong> {{ data.aqi }}</p>
+
+                <canvas id="trendChart" width="400" height="200" class="my-3"></canvas>
+
+                <h5 class="mt-4">Eco Tips:</h5>
+                <ul class="list-group">
+                    {% for tip in data.tips %}
+                        <li class="list-group-item">🌿 {{ tip }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const city = "{{ data.city | default('') }}";
+    if (city) {
+        fetch(`/api/trend/${city}`)
+            .then(res => res.json())
+            .then(data => {
+                const ctx = document.getElementById('trendChart');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Temperature Trend (°C)',
+                            data: data.temps,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40,167,69,0.2)',
+                            tension: 0.4
+                        }]
+                    }
+                });
+            });
+    }
+</script>
+
+</body>
+</html>
